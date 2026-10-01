@@ -1,0 +1,132 @@
+﻿@page "/transactions"
+
+@using System.Net.Http.Json
+@using Common.Helpers
+@using Shared.Dtos
+
+@using Shared.Enums
+@using Microsoft.JSInterop
+
+
+@inject HttpClient Http
+@inject ILocalStorageService LocalStorage
+
+
+
+@if (!isLoggedIn)
+{
+    <div class="alert alert-warning">
+        لطفاً ابتدا وارد حساب کاربری خود شوید.
+    </div>
+}
+else if (transactions == null)
+{
+    <p>در حال دریافت تراکنش‌ها...</p>
+}
+else if (transactions.Count == 0)
+{
+    <p>هنوز تراکنشی ثبت نشده است.</p>
+}
+else
+{
+    <div class="container-fluid">
+        <div class="page-header">
+            <div class="row">
+                <div class="col">
+                    <div class="page-header-left">
+                        <h3>تراکنش‌های من</h3>
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="index.html"><i data-feather="home"></i></a></li>
+                            <li class="breadcrumb-item">طرح صفحه</li>
+                            <li class="breadcrumb-item active">راست چین</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>تراکنش‌های من</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="display" id="basic-1">
+                                <thead>
+                                    <tr>
+                                        <th>نوع</th>
+                                        <th>مبلغ</th>
+                                        <th>ایجادکننده</th>
+                                        <th>طرف حساب</th>
+                                        <th>وضعیت</th>
+                                        <th>تاریخ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in transactions)
+                                    {
+                                        <tr>
+                                            <td>@item.Type.ToDisplay()</td>
+
+                                            <td>@item.Amount.ToNumeric()</td>
+
+                                            <td>@item.CreatorName</td>
+
+                                            <td>@item.CounterpartyName</td>
+
+                                            <td>
+                                                @(item.Status.ToString() switch
+                                                {
+                                                    "Pending" => "در انتظار",
+                                                    "Approved" => "تأیید شده",
+                                                    "Rejected" => "رد شده",
+                                                    _ => "نامشخص"
+                                                })
+                                            </td>
+
+                                            <td>@item.TransactionDate.ToPersianDate()</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+}
+
+@code
+{
+    private List<TransactionDto>? transactions;
+    private bool isLoggedIn;
+    [Inject]
+    public IJSRuntime JS { get; set; }
+    private bool _needDataTableInited = true;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_needDataTableInited)
+        {
+            var result = await JS.InvokeAsync<bool>("initDataTable");
+            if(result)
+                _needDataTableInited = false;
+        }
+
+    }
+    protected override async Task OnInitializedAsync()
+    {
+            transactions = await Http.GetFromJsonAsync<List<TransactionDto>>(
+                "api/Transaction");
+            await JS.InvokeVoidAsync("initDataTable");
+
+        
+    }
+
+}

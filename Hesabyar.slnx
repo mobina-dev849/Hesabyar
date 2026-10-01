@@ -1,0 +1,10 @@
+<Solution>
+  <Project Path="Api/Api.csproj" Id="dda3b6ff-b434-403c-ac43-d65d64c97407" />
+  <Project Path="Client/Client.csproj" Id="61812be5-fbde-46e7-aa00-971787042cdf" />
+  <Project Path="Common/Common.csproj" />
+  <Project Path="Data/Data.csproj" />
+  <Project Path="Domain/Domain.csproj" />
+  <Project Path="Service/Service.csproj" />
+  <Project Path="Shared/Shared.csproj" Id="642d5a84-98c6-41e0-ab53-27d3b63d1e4c" />
+  <Project Path="WebFreamwork/WebFreamwork.csproj" />
+</Solution>

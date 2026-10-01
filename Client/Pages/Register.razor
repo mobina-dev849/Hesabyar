@@ -1,0 +1,144 @@
+﻿
+@page "/register"
+
+@using System.Net.Http.Json
+@using Shared.Dtos
+
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<div class="container mt-5">
+
+    <div class="row justify-content-center">
+
+        <div class="col-md-6 col-lg-5">
+
+            <div class="card shadow-sm">
+
+                <div class="card-body p-4">
+
+                    <h3 class="text-center mb-4">
+                        ثبت نام
+                    </h3>
+
+                    <EditForm Model="@registerModel"
+                              OnSubmit="@RegisterUser">
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                نام و نام خانوادگی
+                            </label>
+
+                            <InputText class="form-control"
+                                       @bind-Value="registerModel.FullName" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                شماره موبایل
+                            </label>
+
+                            <InputText class="form-control"
+                                       @bind-Value="registerModel.PhoneNumber" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                رمز عبور
+                            </label>
+
+                            <InputText type="password"
+                                       class="form-control"
+                                       @bind-Value="registerModel.Password" />
+                        </div>
+
+                        <button type="submit"
+                                class="btn btn-primary w-100"
+                                disabled="@isLoading">
+
+                            @if (isLoading)
+                            {
+                                <span>در حال ثبت نام...</span>
+                            }
+                            else
+                            {
+                                <span>ثبت نام</span>
+                            }
+
+                        </button>
+
+                    </EditForm>
+
+                    @if (!string.IsNullOrEmpty(message))
+                    {
+                        <div class="alert @messageClass mt-3">
+                            @message
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+@code {
+
+    private RegisterDto registerModel = new();
+
+    private string message = "";
+
+    private string messageClass = "";
+
+    private bool isLoading = false;
+
+
+    private async Task RegisterUser()
+    {
+        message = "";
+        isLoading = true;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync(
+                "api/Auth/register",
+                registerModel);
+
+            if (response.IsSuccessStatusCode)
+            {
+                message = "ثبت نام با موفقیت انجام شد.";
+                messageClass = "alert-success";
+
+                registerModel = new RegisterDto();
+            }
+            else
+            {
+                var errorResponse = await response.Content.ReadFromJsonAsync<RegisterErrorResponse>();
+
+                message = errorResponse?.Errors != null
+                    ? string.Join(" | ", errorResponse.Errors)
+                    : "ثبت نام انجام نشد.";
+            }
+        }
+        catch (Exception ex)
+        {
+            message = $"خطا در ارتباط با سرور: {ex.Message}";
+            messageClass = "alert-danger";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private class RegisterErrorResponse
+    {
+        public string Message { get; set; } = "";
+        public List<string> Errors { get; set; } = [];
+    }
+}
+

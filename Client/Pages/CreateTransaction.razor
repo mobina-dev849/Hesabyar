@@ -1,0 +1,100 @@
+﻿@page "/create-transaction"
+
+@using Shared.Enums
+@using Shared.Dtos
+@using Microsoft.JSInterop
+
+@inject HttpClient Http
+@inject ILocalStorageService LocalStorage
+
+<h3>ایجاد تراکنش جدید</h3>
+<div class="container mt-5 text-end">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm">
+            <div class="accordion-body p-4">
+                <h3 class="text-end p-3">تراکنش جدید</h3>
+
+                @if (!string.IsNullOrEmpty(message))
+                {
+                    <div class="alert alert-success">
+                        @message
+                    </div>
+                }
+
+                @if (!isLoggedIn)
+                {
+                     <div class="alert alert-warning">
+                     لطفاً ابتدا وارد حساب کاربری خود شوید.
+                     </div>
+                }
+                else
+                {
+                <EditForm Model="@transaction" OnValidSubmit="@CreateNewTransaction">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">
+                            شماره تلفن طرف حساب
+                        </label>
+                        <InputText class="form-control" @bind-Value="transaction.CounterpartyPhoneNumber" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            مبلغ
+                        </label>
+                        <InputNumber class="form-control" @bind-Value="transaction.Amount" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            توضیحات
+                        </label>
+                        <InputText class="form-control" @bind-Value="transaction.Explainn" />
+                    </div>
+                    <InputSelect class="form-select"
+                                 @bind-Value="transaction.Type">
+                        <option value="@TransactionType.Payment">
+                            پرداخت
+                        </option>
+                        <option value="@TransactionType.Receipt">
+                            دریافت
+                        </option>
+                    </InputSelect>
+
+                    <button type="submit" class="btn btn-primary mt-3">ثبت تراکنش</button>
+                </EditForm>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code
+{
+    private CreateTransactionDto transaction = new();
+
+    private string message = "";
+    private bool isLoggedIn;
+
+    private async Task CreateNewTransaction()
+    {
+        var response = await Http.PostAsJsonAsync(
+            "api/Transaction",
+            transaction);
+
+        if (response.IsSuccessStatusCode)
+        {
+            message = "تراکنش با موفقیت ثبت شد.";
+            transaction = new CreateTransactionDto();
+        }
+        else
+        {
+            message = "ثبت تراکنش با خطا مواجه شد.";
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        var token = LocalStorage.GetItem<string>("authToken");
+
+        isLoggedIn = !string.IsNullOrWhiteSpace(token);
+    }
+}

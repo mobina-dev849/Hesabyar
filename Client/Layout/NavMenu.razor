@@ -1,0 +1,48 @@
+﻿<!--<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">Client</a>
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div
+</div>>-->
+<ul class="sidebar-menu">
+    <li>
+        <NavLink class="sidebar-header" href="" Match="NavLinkMatch.All"ActiveClass="active">
+            <i data-feather="home"></i>
+            <span>خانه</span>
+        </NavLink>
+
+        <NavLink class="sidebar-header" href="login" Match="NavLinkMatch.All" ActiveClass="active">
+            <i data-feather="log-in"></i>
+            <span>ورود</span>
+        </NavLink>
+
+        <NavLink class="sidebar-header" href="register" Match="NavLinkMatch.All" ActiveClass="active">
+            <i data-feather="user-plus"></i>
+            <span>ثبت نام</span>
+        </NavLink>
+
+        <NavLink class="sidebar-header" href="create-transaction" Match="NavLinkMatch.All" ActiveClass="active">
+            <i data-feather="plus-circle"></i>
+            <span>تراکنش جدید</span>
+        </NavLink>
+
+        <NavLink class="sidebar-header" href="transactions" Match="NavLinkMatch.All" ActiveClass="active">
+            <i data-feather="list"></i>
+            <span>تراکنش های من</span>
+        </NavLink>
+    </li>
+
+</ul>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}
