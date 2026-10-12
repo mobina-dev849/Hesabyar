@@ -18,6 +18,7 @@ namespace Shared.Dtos
         public string CounterpartyName { get; set; }
         public string CounterpartyPhoneNumber { get; set; }
 
+        public string Title { get; set; } = string.Empty;
         public string? Explainn { get; set; }
         public decimal Amount { get; set; }
         public DateTime TransactionDate { get; set; }

@@ -12,121 +12,114 @@
 @inject ILocalStorageService LocalStorage
 
 
-
+<h3>حساب‌های من</h3>
 @if (!isLoggedIn)
 {
     <div class="alert alert-warning">
         لطفاً ابتدا وارد حساب کاربری خود شوید.
     </div>
 }
-else if (transactions == null)
+else if (isLoading)
 {
-    <p>در حال دریافت تراکنش‌ها...</p>
+    <p>در حال دریافت حساب‌ها...</p>
 }
-else if (transactions.Count == 0)
+else if (!string.IsNullOrEmpty(errorMessage))
 {
-    <p>هنوز تراکنشی ثبت نشده است.</p>
+    <p>@errorMessage</p>
+}
+else if (accounts is null || accounts.Count == 0)
+{
+    <p>هنوز حسابی نداری.</p>
 }
 else
 {
-    <div class="container-fluid">
-        <div class="page-header">
-            <div class="row">
-                <div class="col">
-                    <div class="page-header-left">
-                        <h3>تراکنش‌های من</h3>
-                        <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="index.html"><i data-feather="home"></i></a></li>
-                            <li class="breadcrumb-item">طرح صفحه</li>
-                            <li class="breadcrumb-item active">راست چین</li>
-                        </ol>
-                    </div>
-                </div>
+    <div class="card border-0 shadow-sm mb-3" style="background-color: #eaf7f0;">
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <div>
+                <div class="text-success">مجموع حساب‌ها</div>
+                <strong class="text-success">
+                    @FormatBalance(accounts.Sum(account => account.Balance))
+                </strong>
             </div>
+
+            <span class="rounded-circle bg-white p-3">💳</span>
         </div>
     </div>
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-sm-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>تراکنش‌های من</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="display" id="basic-1">
-                                <thead>
-                                    <tr>
-                                        <th>نوع</th>
-                                        <th>مبلغ</th>
-                                        <th>ایجادکننده</th>
-                                        <th>طرف حساب</th>
-                                        <th>وضعیت</th>
-                                        <th>تاریخ</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var item in transactions)
-                                    {
-                                        <tr>
-                                            <td>@item.Type.ToDisplay()</td>
 
-                                            <td>@item.Amount.ToNumeric()</td>
+    <div class="row g-3">
 
-                                            <td>@item.CreatorName</td>
+        @foreach (var account in accounts)
+        {
+            <div class="col-12">
+                <a href="@($"/details/{account.PersonId}")"
+                   class="text-decoration-none text-dark">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-circle bg-light text-secondary d-flex align-items-center justify-content-center"
+                                     style="width: 48px; height: 48px;">
+                                    👤
+                                </div>
 
-                                            <td>@item.CounterpartyName</td>
+                                <div>
+                                    <h5 class="mb-1">@account.FullName</h5>
+                                    <span class="@(account.Balance > 0 ? "text-success" : account.Balance < 0 ? "text-danger" : "text-muted")">
+                                        @FormatBalance(account.Balance)
+                                    </span>
+                                </div>
+                            </div>
 
-                                            <td>
-                                                @(item.Status.ToString() switch
-                                                {
-                                                    "Pending" => "در انتظار",
-                                                    "Approved" => "تأیید شده",
-                                                    "Rejected" => "رد شده",
-                                                    _ => "نامشخص"
-                                                })
-                                            </td>
 
-                                            <td>@item.TransactionDate.ToPersianDate()</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
+                            <span class="text-secondary fs-4">‹</span>
                         </div>
                     </div>
-                </div>
-
+                </a>
             </div>
 
-        </div>
+       
+        }
     </div>
-
 }
-
 @code
 {
-    private List<TransactionDto>? transactions;
+    private List<AccountDto>? accounts;
     private bool isLoggedIn;
-    [Inject]
-    public IJSRuntime JS { get; set; }
-    private bool _needDataTableInited = true;
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (_needDataTableInited)
-        {
-            var result = await JS.InvokeAsync<bool>("initDataTable");
-            if(result)
-                _needDataTableInited = false;
-        }
+    private bool isLoading;
+    private string errorMessage = "";
 
-    }
     protected override async Task OnInitializedAsync()
     {
-            transactions = await Http.GetFromJsonAsync<List<TransactionDto>>(
-                "api/Transaction");
-            await JS.InvokeVoidAsync("initDataTable");
+        var token = LocalStorage.GetItem<string>("authToken");
 
-        
+        if (string.IsNullOrWhiteSpace(token))
+            return;
+
+        isLoggedIn = true;
+        isLoading = true;
+
+        try
+        {
+            accounts = await Http.GetFromJsonAsync<List<AccountDto>>(
+                "api/Transaction/accounts");
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "بارگذاری حساب‌ها با خطا مواجه شد.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
+    private static string FormatBalance(decimal balance)
+    {
+        if (balance > 0)
+            return $"{balance:N0} تومان طلبکارم";
+
+        if (balance < 0)
+            return $"{Math.Abs(balance):N0} تومان بدهکارم";
+
+        return "تسویه";
+    }
 }

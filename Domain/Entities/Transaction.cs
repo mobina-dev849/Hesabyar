@@ -11,6 +11,7 @@ namespace Domain.Entities
         public long CounterpartyId { get; set; }
         public User Counterparty { get; set; }   // Navigation Property
 
+        public string Title { get; set; } = string.Empty;
         public string? Explainn { get; set; }
         public decimal Amount { get; set; }
         public DateTime TransactionDate { get; set; }

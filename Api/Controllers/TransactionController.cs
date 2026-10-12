@@ -28,7 +28,8 @@ namespace Api.Controllers
                 return Unauthorized();
             }
 
-            var userId = long.Parse(userIdClaim.Value);
+            if (!long.TryParse(userIdClaim.Value, out var userId))
+                return Unauthorized();
 
             var transactions = await _transactionService.GetUserTransactions(userId, ct);
 
@@ -38,7 +39,12 @@ namespace Api.Controllers
         [HttpGet("{id:long}")]
         public async Task<IActionResult> GetById(long id, CancellationToken ct)
         {
-            var transaction = await _transactionService.GetById(id, ct);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null || !long.TryParse(userIdClaim.Value, out var userId))
+                return Unauthorized();
+
+            var transaction = await _transactionService.GetById(id, userId, ct);
 
             return Ok(transaction);
         }
@@ -89,6 +95,22 @@ namespace Api.Controllers
             await _transactionService.Reject(id, userId, ct);
             return Ok();
         }
+
+        [HttpGet("accounts")]
+        public async Task<IActionResult> GetUserAccounts(CancellationToken ct)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null || !long.TryParse(userIdClaim.Value, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var accounts = await _transactionService.GetUserAccounts(userId, ct);
+
+            return Ok(accounts);
+        }
+
 
     }
 

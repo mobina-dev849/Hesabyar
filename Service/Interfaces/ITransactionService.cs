@@ -7,7 +7,7 @@ namespace Service.Interfaces
 {
     public interface ITransactionService
     {
-        Task<TransactionDto> GetById(long id, CancellationToken ct);
+        Task<TransactionDto> GetById(long id, long requestingUserId, CancellationToken ct);
 
         Task Add(long creatorId, CreateTransactionDto dto, CancellationToken ct);
 
@@ -20,5 +20,7 @@ namespace Service.Interfaces
         Task Reject(long transactionId, long personId, CancellationToken ct);
 
         Task<List<TransactionDto>> GetUserTransactions(long userId, CancellationToken ct);
+
+        Task<List<AccountDto>> GetUserAccounts(long userId, CancellationToken ct);
     }
 }

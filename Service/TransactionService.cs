@@ -71,14 +71,20 @@ namespace Service
             await _transactionRepository.Update(transaction, ct);
         }
 
-        public async Task<TransactionDto> GetById(long id, CancellationToken ct)
+        public async Task<TransactionDto> GetById(long id, long requestingUserId, CancellationToken ct)
         {
             var transaction = await _transactionRepository.GetByIdWithDetails(id, ct);
 
             if (transaction == null)
                 throw new KeyNotFoundException("تراکنش مورد نظر پیدا نشد!");
 
-            return _mapper.Map<TransactionDto>(transaction);
+            if (transaction.CreatorId != requestingUserId && transaction.CounterpartyId != requestingUserId)
+                throw new UnauthorizedAccessException("شما به این تراکنش دسترسی ندارید.");
+
+            var transactionDto = _mapper.Map<TransactionDto>(transaction);
+            
+
+            return transactionDto;
         }
 
         public async Task Approve(long transactionId, long personId, CancellationToken ct)
@@ -113,7 +119,45 @@ namespace Service
         {
             var transactions = await _transactionRepository.GetUserTransactions(userId, ct);
 
-            return _mapper.Map<List<TransactionDto>>(transactions);
+            var transactionDtos = _mapper.Map<List<TransactionDto>>(transactions);
+
+            return transactionDtos;
+        }
+
+        public async Task<List<AccountDto>> GetUserAccounts(long userId, CancellationToken ct)
+        {
+            var transactions = await _transactionRepository.GetUserTransactions(userId, ct);
+            var accountsByPerson = new Dictionary<long, AccountDto>();
+
+            foreach (var transaction in transactions)
+            {
+                var userIsCreator = transaction.CreatorId == userId;
+                var personId = userIsCreator ? transaction.CounterpartyId : transaction.CreatorId;
+                var personName = userIsCreator
+                    ? transaction.Counterparty.FullName
+                    : transaction.Creator.FullName;
+
+                if (!accountsByPerson.TryGetValue(personId, out var account))
+                {
+                    account = new AccountDto
+                    {
+                        PersonId = personId,
+                        FullName = personName,
+                        Balance = 0
+                    };
+                    accountsByPerson.Add(personId, account);
+                }
+
+                // Temporarily include all transaction statuses in the account balance.
+                // if (transaction.Status != Transaction.TransactionStatus.Approved)
+                //     continue;
+
+                var isPayment = transaction.Type == Transaction.TransactionType.Payment;
+                var increasesBalance = userIsCreator == isPayment;
+                account.Balance += increasesBalance ? transaction.Amount : -transaction.Amount;
+            }
+
+            return accountsByPerson.Values.ToList();
         }
     }
 }

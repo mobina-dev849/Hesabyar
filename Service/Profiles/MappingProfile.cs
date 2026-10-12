@@ -33,7 +33,8 @@ namespace Service.Profiles
             CreateMap<Transaction, UpdateTransacitonDto>();
             CreateMap<UpdateTransacitonDto, Transaction>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.StatusDate, opt => opt.Ignore());
+                .ForMember(dest => dest.StatusDate, opt => opt.Ignore())
+                .ForMember(dest => dest.Title, opt => opt.Condition(src => src.Title != null));
         }
     }
 }
